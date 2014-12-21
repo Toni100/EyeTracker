@@ -17,12 +17,6 @@ function highlightEyes(eyes) {
   });
 }
 
-eyelocation.onmessage = function (event) {
-  requestAnimationFrame(function () {
-    highlightEyes(event.data);
-  });
-};
-
 function getImageData() {
   var video = document.getElementById('video'),
     canvas = document.createElement('canvas'),
@@ -33,16 +27,21 @@ function getImageData() {
   return context.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-function startTracking() {
-  setInterval(function () {
-    var imageData = getImageData();
-    eyelocation.postMessage({
-      buffer: imageData.data.buffer,
-      width: imageData.width,
-      height: imageData.height
-    }, [imageData.data.buffer]);
-  }, 250);
+function track() {
+  var imageData = getImageData();
+  eyelocation.postMessage({
+    buffer: imageData.data.buffer,
+    width: imageData.width,
+    height: imageData.height
+  }, [imageData.data.buffer]);
 }
+
+eyelocation.onmessage = function (event) {
+  requestAnimationFrame(function () {
+    highlightEyes(event.data);
+    setTimeout(track, 100);
+  });
+};
 
 function setOverlaySize(callback) {
   var video = document.getElementById('video'),
@@ -60,6 +59,6 @@ function setOverlaySize(callback) {
 window.addEventListener('load', function () {
   navigator.mozGetUserMedia({video: true}, function (stream) {
     document.getElementById('video').mozSrcObject = stream;
-    setOverlaySize(startTracking);
+    setOverlaySize(track);
   }, function (error) { console.log(error); });
 });
